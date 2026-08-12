@@ -1,25 +1,3 @@
-"""
-Battery Storage Investment Case Study — ERCOT Market
-=======================================================
-Case: Should Meridian Power Partners invest in a 100 MW / 400 MWh
-(4-hour) standalone battery energy storage system (BESS) in ERCOT?
-
-This module builds:
-  1. A calibrated synthetic hourly price series for ERCOT (Houston Hub-like)
-     grounded in publicly reported 2025 market statistics.
-  2. A dispatch / revenue model (energy arbitrage + ancillary services).
-  3. A 20-year project finance model (capex, opex, degradation, ITC,
-     depreciation, discounting) producing NPV, IRR, payback, LCOS.
-  4. Sensitivity (tornado) analysis and a Monte Carlo risk simulation.
-
-All market/cost assumptions are documented in ASSUMPTIONS and are calibrated
-to (not copied from) publicly available sources cited in the accompanying
-report: ERCOT market reports (Potomac Economics 2025 State of the Market;
-Tyba Energy H1 2025 storage performance), NREL ATB / NREL Cost Projections
-for Utility-Scale Battery Storage (2025 Update), and IRS Section 48E ITC
-guidance post One Big Beautiful Bill Act (OBBBA, 2025).
-"""
-
 import numpy as np
 import pandas as pd
 import json
@@ -31,19 +9,12 @@ FIG = Path(__file__).resolve().parent.parent / "figures"
 OUT.mkdir(exist_ok=True)
 FIG.mkdir(exist_ok=True)
 
-# ----------------------------------------------------------------------------
-# 1. ASSUMPTIONS  (documented, single source of truth for report + dashboard)
-# ----------------------------------------------------------------------------
 ASSUMPTIONS = {
-    # --- Project specification ---
     "power_mw": 100,                # nameplate power, MW
     "duration_hr": 4,                # hours of storage at rated power
     "energy_mwh": 400,               # power_mw * duration_hr
     "round_trip_efficiency": 0.86,   # typical utility-scale Li-ion BESS (NREL)
     "project_life_yr": 20,
-
-    # --- Capex / opex (NREL ATB & NREL Cost Projections for Utility-Scale
-    #     Battery Storage, 2025 Update; mid-case, current-year ~2025-26) ---
     "capex_per_kwh": 340,            # $/kWh installed, mid-case current-year
     "bos_soft_costs_pct": 0.0,       # already embedded in $/kWh turnkey figure
     "fixed_om_per_kw_yr": 9.5,       # $/kW-yr fixed O&M (NREL ATB range 7-12)
@@ -51,21 +22,10 @@ ASSUMPTIONS = {
     "augmentation_yr": 10,           # year of major augmentation/replacement
     "augmentation_cost_pct": 0.35,   # % of original capex spent at year 10
     "annual_degradation_pct": 0.015, # 1.5%/yr energy-capacity fade
-
-    # --- Incentives (Section 48E ITC, post-OBBBA — standalone storage
-    #     retained a 30% base credit through the early 2030s, subject to
-    #     prevailing wage/apprenticeship and FEOC sourcing compliance) ---
     "itc_pct": 0.30,
     "macrs_years": 7,                # MACRS class life for storage
-
-    # --- Financing / discounting ---
     "discount_rate": 0.085,          # nominal after-tax WACC, merchant storage
     "tax_rate": 0.25,
-
-    # --- Revenue model (calibrated to ERCOT 2025 storage-fleet reporting:
-    #     ~42% of BESS fleet revenue from Ancillary Services, ~40% Real-Time
-    #     energy, ~18% Day-Ahead energy; falling volatility as storage
-    #     penetration (14+ GW) compresses spreads) ---
     "avg_price_mwh": 28,             # annual average DA price, $/MWh
     "price_daily_amplitude": 18,     # diurnal swing amplitude, $/MWh
     "price_seasonal_amplitude": 10,  # summer/winter uplift, $/MWh
@@ -82,9 +42,7 @@ ASSUMPTIONS = {
 def build_price_curve(assump=ASSUMPTIONS, hours=8760, seed=42):
     """Synthetic hourly ERCOT day-ahead price curve calibrated to 2025
     market statistics (mean, diurnal shape, seasonality, spike frequency,
-    negative-price frequency). Not raw ERCOT data — a stylized proxy used
-    for illustrative financial modeling, as is standard consulting practice
-    when a full nodal dataset isn't on hand."""
+    negative-price frequency)."""
     rng = np.random.default_rng(seed)
     t = np.arange(hours)
     hour_of_day = t % 24
@@ -111,8 +69,7 @@ def build_price_curve(assump=ASSUMPTIONS, hours=8760, seed=42):
 def simulate_dispatch_revenue(price, assump=ASSUMPTIONS):
     """Simple perfect-foresight daily arbitrage: charge the cheapest hours,
     discharge the priciest hours each day, subject to power/energy/efficiency
-    limits. Adds ancillary-services revenue as a share of total, matching
-    ERCOT fleet-average revenue stacking."""
+    limits."""
     power = assump["power_mw"]
     energy = assump["energy_mwh"]
     rte = assump["round_trip_efficiency"]
