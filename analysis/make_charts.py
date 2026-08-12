@@ -12,7 +12,6 @@ from battery_model import (build_price_curve, simulate_dispatch_revenue,
 FIG = Path(__file__).resolve().parent.parent / "figures"
 FIG.mkdir(exist_ok=True)
 
-# Simple, plain colors, nothing fancy
 BLUE = "#4C72B0"
 ORANGE = "#DD8452"
 GREEN = "#55A868"
@@ -34,7 +33,7 @@ tornado = tornado_sensitivity(disp["total_revenue_yr1"])
 mc = monte_carlo(disp["total_revenue_yr1"])
 cf = fin["cashflow"]
 
-# --- 1. Price duration curve -------------------------------------------------
+# Price duration curve
 fig, ax = plt.subplots(figsize=(7.2, 4.2))
 sorted_price = np.sort(price.values)[::-1]
 pct = np.linspace(0, 100, len(sorted_price))
@@ -47,7 +46,7 @@ fig.tight_layout()
 fig.savefig(FIG / "price_duration_curve.png", dpi=200)
 plt.close(fig)
 
-# --- 2. Revenue stack (yr1) ---------------------------------------------------
+# Revenue stack (yr1)
 fig, ax = plt.subplots(figsize=(6, 4.2))
 labels = ["Energy trading", "Ancillary services"]
 vals = [disp["energy_arbitrage_revenue"] / 1e6, disp["ancillary_revenue"] / 1e6]
@@ -61,7 +60,7 @@ fig.tight_layout()
 fig.savefig(FIG / "revenue_stack.png", dpi=200)
 plt.close(fig)
 
-# --- 3. Cash flow / annual net cash flow ----------------------------
+# Cash flow / annual net cash flow
 fig, ax = plt.subplots(figsize=(8, 4.5))
 colors = [RED if v < 0 else BLUE for v in cf["net_cf"]]
 ax.bar(cf["year"], cf["net_cf"] / 1e6, color=colors, width=0.7)
@@ -76,7 +75,7 @@ fig.tight_layout()
 fig.savefig(FIG / "cashflow_waterfall.png", dpi=200)
 plt.close(fig)
 
-# --- 4. Tornado chart -----------------------------------------------------------
+# Tornado chart
 fig, ax = plt.subplots(figsize=(7.5, 4.5))
 tor = tornado.copy()
 base = tor["base_npv"].iloc[0] / 1e6
@@ -96,7 +95,7 @@ fig.tight_layout()
 fig.savefig(FIG / "tornado_sensitivity.png", dpi=200)
 plt.close(fig)
 
-# --- 5. Monte Carlo distribution ------------------------------------------------
+# Monte Carlo distribution
 fig, ax = plt.subplots(figsize=(7.2, 4.2))
 npvs = mc["npvs"] / 1e6
 ax.hist(npvs, bins=45, color=BLUE, alpha=0.85, edgecolor="white")
