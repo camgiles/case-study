@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Battery Storage Investment Case Study: Interactive Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --surface-1:#f4f6f8; --surface-2:#ffffff; --text-primary:#0b0b0b;
+    --text-secondary:#52514e; --text-muted:#898781; --border:#e1e0d9;
+    --text-success:#0ca30c; --text-danger:#d03b3b; --radius:8px;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    max-width: 760px; margin: 40px auto; padding: 0 20px; color: var(--text-primary); background:#fbfbfa; }
+  h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+  .sub { color: var(--text-secondary); font-size: 14px; margin-bottom: 28px; }
+  input[type=range] { width: 100%; }
+  footer { color: var(--text-muted); font-size: 12px; margin-top: 30px; border-top: 1px solid var(--border); padding-top: 14px; }
+</style>
+</head>
+<body>
+<h1>Should Meridian Power Partners invest in a 100MW/400MWh ERCOT battery?</h1>
+<p class="sub">Drag the sliders below to see how build cost, revenue, discount rate, and the tax credit change the project's returns.</p>
+
+<div style="max-width:680px;">
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem;">
+    <div style="background:var(--surface-1);border-radius:var(--radius);padding:1rem;">
+      <p style="font-size:13px;color:var(--text-secondary);margin:0 0 4px;">20-yr NPV</p>
+      <p style="font-size:22px;font-weight:500;margin:0;" id="m-npv">--</p>
+    </div>
+    <div style="background:var(--surface-1);border-radius:var(--radius);padding:1rem;">
+      <p style="font-size:13px;color:var(--text-secondary);margin:0 0 4px;">IRR</p>
+      <p style="font-size:22px;font-weight:500;margin:0;" id="m-irr">--</p>
+    </div>
+    <div style="background:var(--surface-1);border-radius:var(--radius);padding:1rem;">
+      <p style="font-size:13px;color:var(--text-secondary);margin:0 0 4px;">Payback</p>
+      <p style="font-size:22px;font-weight:500;margin:0;" id="m-payback">--</p>
+    </div>
+    <div style="background:var(--surface-1);border-radius:var(--radius);padding:1rem;">
+      <p style="font-size:13px;color:var(--text-secondary);margin:0 0 4px;">LCOS</p>
+      <p style="font-size:22px;font-weight:500;margin:0;" id="m-lcos">--</p>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px 24px;margin-bottom:1.5rem;">
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:4px;">
+        <label style="color:var(--text-secondary);">Installed capex</label>
+        <span id="out-capex" style="font-weight:500;">$340/kWh</span>
+      </div>
+      <input type="range" id="capex" min="200" max="450" value="340" step="5">
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:4px;">
+        <label style="color:var(--text-secondary);">Achieved revenue vs. base case</label>
+        <span id="out-rev" style="font-weight:500;">100%</span>
+      </div>
+      <input type="range" id="rev" min="50" max="180" value="100" step="5">
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:4px;">
+        <label style="color:var(--text-secondary);">Discount rate (WACC)</label>
+        <span id="out-disc" style="font-weight:500;">8.5%</span>
+      </div>
+      <input type="range" id="disc" min="4" max="14" value="8.5" step="0.5">
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:4px;">
+        <label style="color:var(--text-secondary);">Section 48E ITC</label>
+        <span id="out-itc" style="font-weight:500;">30%</span>
+      </div>
+      <input type="range" id="itc" min="0" max="40" value="30" step="5">
+    </div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:8px;font-size:12px;color:var(--text-secondary);">
+    <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#199e70;"></span>Positive annual cash flow</span>
+    <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#d95926;"></span>Negative annual cash flow</span>
+    <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:2px;background:#2a78d6;"></span>Cumulative cash flow</span>
+  </div>
+  <div style="position:relative;width:100%;height:280px;">
+    <canvas id="cfChart" role="img" aria-label="Annual and cumulative project cash flow over 20 years, updating with the sliders above">Chart shows annual and cumulative cash flow for a 100MW/400MWh battery storage project.</canvas>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+(function(){
+  const POWER_MW = 100, ENERGY_MWH = 400, LIFE = 20;
+  const BASE_REVENUE = 11364493;
+  const FIXED_OM_YR1 = 9.5 * POWER_MW * 1000;
+  const VAR_OM_YR1 = 2.0 * (POWER_MW*24*365*1.3/6);
+  const MACRS = [0.1429,0.2449,0.1749,0.1249,0.0893,0.0892,0.0893,0.0446];
+  const DEGR = 0.015, AUG_YR = 10, AUG_PCT = 0.35, TAX = 0.25;
+
+  function computeModel(capexPerKwh, revMult, discRate, itcPct){
+    const capex = capexPerKwh * ENERGY_MWH * 1000;
+    const itc = capex * itcPct;
+    const netCapex = capex - itc;
+    const revenueYr1 = BASE_REVENUE * revMult;
+    const deprBasis = capex - 0.5*itc;
+    let rows = [{year:0, net_cf:-netCapex}];
+    for(let yr=1; yr<=LIFE; yr++){
+      const degrFactor = Math.pow(1-DEGR, yr-1);
+      const revenue = revenueYr1 * degrFactor;
+      const opex = (FIXED_OM_YR1+VAR_OM_YR1) * Math.pow(1.02, yr-1);
+      const augmentation = (yr===AUG_YR) ? capex*AUG_PCT : 0;
+      const depreciation = (yr-1 < MACRS.length) ? deprBasis*MACRS[yr-1] : 0;
+      const ebt = revenue - opex - depreciation;
+      const tax = Math.max(ebt,0)*TAX;
+      const net_cf = revenue - opex - augmentation - tax;
+      rows.push({year:yr, net_cf});
+    }
+    let npv=0;
+    rows.forEach(r=>{ npv += r.net_cf / Math.pow(1+discRate, r.year); });
+    let irr = bisectIRR(rows.map(r=>r.net_cf));
+    let cum=0, paybackYr=null;
+    rows.forEach(r=>{ cum+=r.net_cf; if(paybackYr===null && cum>0) paybackYr=r.year; });
+    const totalMwh = POWER_MW*4*365*1.3*LIFE;
+    const totalCost = netCapex + rows.slice(1).reduce((s,r)=>s+(FIXED_OM_YR1+VAR_OM_YR1),0) + capex*AUG_PCT;
+    const lcos = totalCost/totalMwh;
+    return {rows, npv, irr, paybackYr, lcos};
+  }
+  function npvAt(cfs, r){ let s=0; cfs.forEach((c,i)=>{ s+=c/Math.pow(1+r,i); }); return s; }
+  function bisectIRR(cfs){
+    let lo=-0.5, hi=2.0;
+    for(let i=0;i<60;i++){
+      const mid=(lo+hi)/2;
+      if(npvAt(cfs,mid)>0) lo=mid; else hi=mid;
+    }
+    return (lo+hi)/2;
+  }
+  function fmtM(v){ const s = v<0 ? '-' : ''; return s+'$'+Math.abs(v/1e6).toFixed(1)+'M'; }
+  function fmtPct(v){ return (v*100).toFixed(1)+'%'; }
+
+  const ctx = document.getElementById('cfChart');
+  let chart = new Chart(ctx, {
+    data: {
+      labels: Array.from({length:21}, (_,i)=>i),
+      datasets: [
+        {type:'bar', label:'Annual', data:[], backgroundColor:[], borderRadius:3},
+        {type:'line', label:'Cumulative', data:[], borderColor:'#2a78d6', borderWidth:2, pointRadius:0, tension:0.15}
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{title:{display:true,text:'Project year'}, grid:{display:false}},
+        y:{title:{display:true,text:'$M'}, grid:{color:'#e1e0d9'}}
+      }
+    }
+  });
+
+  function update(){
+    const capex = +document.getElementById('capex').value;
+    const revMult = +document.getElementById('rev').value/100;
+    const disc = +document.getElementById('disc').value/100;
+    const itc = +document.getElementById('itc').value/100;
+
+    document.getElementById('out-capex').textContent = '$'+capex+'/kWh';
+    document.getElementById('out-rev').textContent = document.getElementById('rev').value+'%';
+    document.getElementById('out-disc').textContent = document.getElementById('disc').value+'%';
+    document.getElementById('out-itc').textContent = document.getElementById('itc').value+'%';
+
+    const m = computeModel(capex, revMult, disc, itc);
+    document.getElementById('m-npv').textContent = fmtM(m.npv);
+    document.getElementById('m-npv').style.color = m.npv>0 ? 'var(--text-success)' : 'var(--text-danger)';
+    document.getElementById('m-irr').textContent = fmtPct(m.irr);
+    document.getElementById('m-payback').textContent = m.paybackYr===null ? '>20 yr' : m.paybackYr+' yr';
+    document.getElementById('m-lcos').textContent = '$'+m.lcos.toFixed(0)+'/MWh';
+
+    const annual = m.rows.map(r=>r.net_cf/1e6);
+    let cum=0; const cumulative = m.rows.map(r=>{ cum+=r.net_cf/1e6; return cum; });
+    const colors = annual.map(v=> v<0 ? '#e34948' : '#1baf7a');
+
+    chart.data.datasets[0].data = annual;
+    chart.data.datasets[0].backgroundColor = colors;
+    chart.data.datasets[1].data = cumulative;
+    chart.update();
+  }
+
+  ['capex','rev','disc','itc'].forEach(id=>{
+    document.getElementById(id).addEventListener('input', update);
+  });
+  update();
+})();
+</script>
+</body>
+</html>

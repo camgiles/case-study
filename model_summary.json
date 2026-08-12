@@ -1,0 +1,49 @@
+{
+  "assumptions": {
+    "power_mw": 100,
+    "duration_hr": 4,
+    "energy_mwh": 400,
+    "round_trip_efficiency": 0.86,
+    "project_life_yr": 20,
+    "capex_per_kwh": 340,
+    "bos_soft_costs_pct": 0.0,
+    "fixed_om_per_kw_yr": 9.5,
+    "variable_om_per_mwh": 2.0,
+    "augmentation_yr": 10,
+    "augmentation_cost_pct": 0.35,
+    "annual_degradation_pct": 0.015,
+    "itc_pct": 0.3,
+    "macrs_years": 7,
+    "discount_rate": 0.085,
+    "tax_rate": 0.25,
+    "avg_price_mwh": 28,
+    "price_daily_amplitude": 18,
+    "price_seasonal_amplitude": 10,
+    "price_noise_std": 9,
+    "spike_prob": 0.006,
+    "spike_size_mean": 220,
+    "negative_price_prob": 0.03,
+    "ancillary_revenue_share": 0.42,
+    "cycles_per_day": 1.3,
+    "availability": 0.97
+  },
+  "dispatch": {
+    "energy_arbitrage_revenue": 6591405.947846407,
+    "ancillary_revenue": 4773087.06568188,
+    "total_revenue_yr1": 11364493.013528287,
+    "mwh_discharged": 146000.0
+  },
+  "npv": -41376873.91873833,
+  "irr": -0.0011824456019135445,
+  "payback_yr": null,
+  "lcos_per_mwh": 46.12902604969467,
+  "capex_gross": 136000000,
+  "itc_value": 40800000.0,
+  "monte_carlo": {
+    "p_positive": 0.028333333333333332,
+    "p10": -67757817.26369092,
+    "p50": -41145650.20411344,
+    "p90": -14083897.083209984,
+    "mean": -41160382.94369924
+  }
+}
