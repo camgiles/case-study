@@ -159,7 +159,7 @@ const doc = new Document({
       new Paragraph({
         alignment: AlignmentType.CENTER,
         spacing: { after: 700 },
-        children: [new TextRun({ text: "Cameron  |  Finance and Data Science  |  August 2026", size: 21, color: GRAY, font: "Times New Roman" })],
+        children: [new TextRun({ text: "Cameron Giles", size: 21, color: GRAY, font: "Times New Roman" })],
       }),
 
 
