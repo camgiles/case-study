@@ -30,6 +30,7 @@ python3 make_charts.py       # regenerates the figures used in the report
 ```
 
 Download `dashboard/index.html` and open it. It will open directly in your browser
+Download `report/Battery_Storage_Investment_Case_Study.docx` and open in Word.
 
 ## Data & sourcing
 
