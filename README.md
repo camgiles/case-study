@@ -2,7 +2,7 @@
 
 An investment case study combining **financial modeling** and **power-market analysis** to answer a question every renewables/storage developer is asking in 2026: does standalone battery storage still clear the cost of capital in ERCOT?
 
-Built as a portfolio project applying a finance + data science background to power, renewables, and energy-consulting problems.
+Built as a passion project applying a finance + data science background to power, renewables, and energy consulting problems.
 
 ## What's here
 
