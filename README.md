@@ -29,7 +29,7 @@ python3 battery_model.py     # prints the model summary as JSON
 python3 make_charts.py       # regenerates the figures used in the report
 ```
 
-Open `dashboard/index.html` directly in a browser, no server or build step needed.
+Download `dashboard/index.html` and open it. It will open directly in your browser
 
 ## Data & sourcing
 
